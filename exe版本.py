@@ -4,6 +4,9 @@ from xml.etree import ElementTree as ET
 
 files = ["metadata.pegasus.txt"]
 romPath = "./"
+dictList = {"assets.box_front": "image", "assets.logo": "marquee",
+            "assets.video": "video", "file": "path", "sort-by": "sortname", "description": "desc"}
+mediaList = ("image", "marquee", "video")
 
 
 def indent(elem, level=0):
@@ -23,7 +26,6 @@ def indent(elem, level=0):
 
 
 def fileList(path):
-    print("Find file in " + path)
     for pathDir in os.listdir(path):
         fullpath = os.path.join(path, pathDir)
         if os.path.isdir(fullpath):
@@ -45,24 +47,27 @@ def convert(metaFile):
     name = ""
     with open(metaFile, 'r', encoding='utf-8') as file:
         for line in file:
-            idx = line.find(":")
-            if (idx < 1):
+            if (line[0] == " " and line[1] == " "):
+                key = "file"
+                value = line[2:].strip()
+            else:
+                idx = line.find(":")
+                if (idx < 1):
+                    continue
+                key = line[0:idx].strip()
+                value = line[idx+1:].strip()
+
+            if (value == ""):
                 continue
-            key = line[0:idx].strip()
-            value = line[idx+1:].strip()
+
             if (key == "game"):
                 name = value
                 game = ET.SubElement(gameList, "game")
                 att = ET.SubElement(game, "name")
                 att.text = name
-
-            elif (game != None):
-                if (key == "developer" and value == name):
-                    continue
-                if (key == "description"):
-                    key = "desc"
-                if (key == "file"):
-                    key = "path"
+            elif (game is not None):
+                key = dictList.get(key) or key
+                if (key == "sortname"):
                     # add image logo video
                     fileName = os.path.basename(value).split('.')[0]
                     mediaPath = "./media/" + fileName + "/"
@@ -72,9 +77,11 @@ def convert(metaFile):
                     att.text = mediaPath + "logo.png"
                     att = ET.SubElement(game, "video")
                     att.text = mediaPath + "video.mp4"
-
+                if (key == "path" or key in mediaList):
                     value = "./" + value
-
+                if (key in mediaList):
+                    for aName in game.findall(key):
+                        game.remove(aName)
                 att = ET.SubElement(game, key)
                 att.text = value
 

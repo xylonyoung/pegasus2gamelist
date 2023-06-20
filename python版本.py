@@ -3,8 +3,9 @@ from xml.etree import ElementTree as ET
 
 files = ["metadata.pegasus.txt"]
 romPath = "./"
-aDict = {"assets.box_front": "image", "assets.logo": "marquee",
-         "assets.video": "video", "file": "path", "sort-by": "sortname", "description": "desc"}
+dictList = {"assets.box_front": "image", "assets.logo": "marquee",
+            "assets.video": "video", "file": "path", "sort-by": "sortname", "description": "desc"}
+mediaList = ("image", "marquee", "video")
 
 
 def indent(elem, level=0):
@@ -64,14 +65,24 @@ def convert(metaFile):
                 att = ET.SubElement(game, "name")
                 att.text = name
             elif (game is not None):
-                key = aDict.get(key)
-                if (key is not None):
-                    if (key != "sort-by" and key != "description"):
-                        value = "./" + value
-                    att = ET.SubElement(game, key)
-                    att.text = value
-                else:
-                    continue
+                key = dictList.get(key) or key
+                if (key == "sortname"):
+                    # add image logo video
+                    fileName = os.path.basename(value).split('.')[0]
+                    mediaPath = "./media/" + fileName + "/"
+                    att = ET.SubElement(game, "image")
+                    att.text = mediaPath + "boxFront.jpg"
+                    att = ET.SubElement(game, "marquee")
+                    att.text = mediaPath + "logo.png"
+                    att = ET.SubElement(game, "video")
+                    att.text = mediaPath + "video.mp4"
+                if (key == "path" or key in mediaList):
+                    value = "./" + value
+                if (key in mediaList):
+                    for aName in game.findall(key):
+                        game.remove(aName)
+                att = ET.SubElement(game, key)
+                att.text = value
 
     indent(gameList)
     tree = ET.ElementTree(gameList)

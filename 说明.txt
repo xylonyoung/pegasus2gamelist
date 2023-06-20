@@ -1,2 +1,3 @@
-exe版本会报毒。
 软件会将目录下所有的 metadata.pegasus.txt 生成 gamelist.xml。
+
+exe版本会报毒，或使用 python版。
