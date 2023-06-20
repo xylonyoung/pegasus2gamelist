@@ -79,8 +79,10 @@ def convert(metaFile):
                 if (key == "path" or key in mediaList):
                     value = "./" + value
                 if (key in mediaList):
+                    # delete the same tag
                     for aName in game.findall(key):
                         game.remove(aName)
+
                 att = ET.SubElement(game, key)
                 att.text = value
 
