@@ -1,0 +1,111 @@
+import os
+import PySimpleGUI as sg
+from xml.etree import ElementTree as ET
+
+files = ["metadata.pegasus.txt"]
+romPath = "./"
+
+
+def indent(elem, level=0):
+    i = "\n" + level*"\t"
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "\t"
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+
+def fileList(path):
+    print("Find file in " + path)
+    for pathDir in os.listdir(path):
+        fullpath = os.path.join(path, pathDir)
+        if os.path.isdir(fullpath):
+            fileList(fullpath)
+        elif os.path.isfile(fullpath):
+            if fullpath.endswith("metadata.pegasus.txt"):
+                fullpath = fullpath.replace("\\", "/")
+                files.append(fullpath)
+                print("Find out: " + fullpath)
+                convert(fullpath)
+
+
+def convert(metaFile):
+    metaFile = os.path.expanduser(metaFile)
+    romPath = os.path.dirname(metaFile)
+    xmlFile = romPath + "/gamelist.xml"
+    gameList = ET.Element("gameList")
+    game = None
+    name = ""
+    with open(metaFile, 'r', encoding='utf-8') as file:
+        for line in file:
+            idx = line.find(":")
+            if (idx < 1):
+                continue
+            key = line[0:idx].strip()
+            value = line[idx+1:].strip()
+            if (key == "game"):
+                name = value
+                game = ET.SubElement(gameList, "game")
+                att = ET.SubElement(game, "name")
+                att.text = name
+
+            elif (game != None):
+                if (key == "developer" and value == name):
+                    continue
+                if (key == "description"):
+                    key = "desc"
+                if (key == "file"):
+                    key = "path"
+                    # add image logo video
+                    fileName = os.path.basename(value).split('.')[0]
+                    mediaPath = "./media/" + fileName + "/"
+                    att = ET.SubElement(game, "image")
+                    att.text = mediaPath + "boxFront.jpg"
+                    att = ET.SubElement(game, "marquee")
+                    att.text = mediaPath + "logo.png"
+                    att = ET.SubElement(game, "video")
+                    att.text = mediaPath + "video.mp4"
+
+                    value = "./" + value
+
+                att = ET.SubElement(game, key)
+                att.text = value
+
+    indent(gameList)
+    tree = ET.ElementTree(gameList)
+    tree.write(xmlFile, "UTF-8", xml_declaration=True)
+
+
+sg.theme('dark brown 3')
+
+
+# Define the window's contents
+layout = [[sg.Text('目录下所有的 metadata.pegasus.txt 都会生成 gamelist.xml',
+                   font=("Arial", 18), key='text')],
+          [sg.Button('运行', size=(14, 1), font=("Arial", 18),
+                     key='confirm')]]
+
+# Create the window
+window = sg.Window('gamelist.xml 生成 by Xylon', layout)
+
+# Display and interact with the Window using an Event Loop
+while True:
+    event, values = window.read()
+    # See if user wants to quit or window was closed
+    if event == sg.WINDOW_CLOSED or event == 'Quit':
+        break
+    elif event == 'confirm':
+        fileList(os.path.expanduser(romPath))
+        window['text'].update('总转换数：' + str(len(files) - 1))
+        window['confirm'].update('已完成', disabled=True)
+
+
+# Finish up by removing from the screen
+window.close()
