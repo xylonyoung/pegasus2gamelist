@@ -1,3 +1,0 @@
-软件会将目录下所有的 metadata.pegasus.txt 生成 gamelist.xml。
-
-不想装 python 的可以用 exe版本但是会报毒。
