@@ -36,17 +36,9 @@ def readXmlFiles(path):
 
 # write data to xml file
 def writeXmlFile(path, file):
+    global sameGameCounter
     root = ET.parse(path + "/" + file).getroot()
-    hasGame = False
     for newGame in root.findall("game"):
-        for game in gameList.findall("game"):
-            # if the game name is the same, then skip it
-            if (newGame.find("name").text == game.find("name").text):
-                hasGame = True
-                continue
-        if (hasGame):
-            hasGame = False
-            continue
         modifyGameData(path, newGame)
 
 
@@ -54,6 +46,8 @@ def writeXmlFile(path, file):
 def modifyGameData(path, game):
     attrList = ["path", "image", "marquee", "video"]
     for attr in attrList:
+        if (path == "./"):
+            continue
         game.find(attr).text = path + game.find(attr).text[1:]
     gameList.append(game)
 
